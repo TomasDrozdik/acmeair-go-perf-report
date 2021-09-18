@@ -1,0 +1,28 @@
+diff --git a/docker-compose.yaml b/docker-compose.yaml
+index 790ae13..159c2a5 100644
+--- a/docker-compose.yaml
++++ b/docker-compose.yaml
+@@ -4,6 +4,9 @@ services:
+   acmeair:
+     container_name: acmeair
+     image: acmeair-go
++    mem_limit: 2G
++    mem_reservation: 2G
++    cpus: 2
+     environment:
+       - MONGO_HOST=mongo
+       - MONGO_PORT=27017
+@@ -12,8 +15,11 @@ services:
+ 
+   mongo:
+     container_name: mongo
+-    image: mongo
+-    command: mongod --auth
++    image: mongo:3.6
++    command: mongod --auth --wiredTigerCacheSizeGB 1.5
++    mem_limit: 2G
++    mem_reservation: 2G
++    cpus: 2
+     environment:
+       - MONGO_INITDB_DATABASE=acmeair
+     volumes:
