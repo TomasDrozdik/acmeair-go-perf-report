@@ -1,6 +1,6 @@
 # Performance evaluation of web-server in a containerized environment - NPRG131 Exam Report
 
-In this [paper][1] authors describe a new form of profiling that combines sampling and event based profiling to search for layered bottlenecks in large scale, even distributed, applications such as a web server or a blockchain network.
+In this paper[1] authors describe a new form of profiling that combines sampling and event based profiling to search for layered bottlenecks in large scale, even distributed, applications such as a web server or a blockchain network.
 This kind of performance evaluation peaked my interest because evaluation of applications on distributed scale seemed complex and I wasn't aware of how to do such thing.
 Obviously in order to properly measure distributed scale applications you need proper hardware and I did not obtain access to such hardware.
 However, I though that containerized environment could provide me with an opportunity to try out the toolchain on a smaller scale even though the results do not reflect actual real-world scenario in any way.
@@ -9,13 +9,13 @@ However, I though that containerized environment could provide me with an opport
 ## Background
 
 Aforementioned paper used and expanded `pprof` profiling tool in the Go language by introducing a novel concept of *wake-up profiles*.
-My original intent was to reproduce the scenario profiling open-source web application - [AcmeAir benchmark][2] and try out the new profiling technique with special version of the [`go`][4].
+My original intent was to reproduce the scenario profiling open-source web application - AcmeAir benchmark[2] and try out the new profiling technique with special version of the `go`[4].
 Even though I was able to obtain so called *wakeup-profile* I wasn't able to find tooling that would process the output and it seemed a bit tedious to write it myself so I have settled to ommit this part.
 
 
-Performance analysis of AcmeAir has already done in the referenced [paper][5] where authors compared performance competetiveness of dynamically compiled languages (Java, NodeJS) and statically compiled languages (Go).
-For this purpose they have compared [AcmeAir benchmark][2] with original Java and NodeJS implementations with their own Go version of the application - [AcmeAirGo][3].
-This version allows me to use quite extensive profiling capabilities of the [`pprof`][6] tool in addition to other tools covered in the lecture.
+Performance analysis of AcmeAir has already done in the referenced paper[5] where authors compared performance competetiveness of dynamically compiled languages (Java, NodeJS) and statically compiled languages (Go).
+For this purpose they have compared AcmeAir benchmark[2] with original Java and NodeJS implementations with their own Go version of the application - AcmeAirGo[3].
+This version allows me to use quite extensive profiling capabilities of the `pprof`[6] tool in addition to other tools covered in the lecture.
 
 
 ## Setup
@@ -31,9 +31,9 @@ A client can:
 As a persistent store AcmeAir can use either MongoDB or Apache Cassandra but the autors of study[5] chose MongoDB as the only version for AcmeAirGo thus I use that one.
 They also used Gin webframework instead of built in standard library web tools.
 
-The general setup from studies [1,5] is the following:
+The general setup from studies[1,5] is the following:
 
-### Figure 1: {#figure_1}
+### Figure 1:
 ```
     DRIVER HOST |       |    APPLICATION HOST   |      | DATABASE HOST
                 |  REST |       AcmeAirGo       | BSON | 
@@ -53,7 +53,7 @@ In these study[1] each host is a virtual machine with:
 AcmeAir is meant to be used as an example web-application used in benchmarks.
 For this purpose there are so called drivers that describe what should a load generator, such as JMeter, do to emulate users.
 
-I have found this [driver][7] that describes what should a JMeter do as in the [study][1,5]:
+I have found this driver[7] that describes what should a JMeter do as in the study[1,5]:
 1. Login
 2. Update customer profile (25% of the time)
 3. Loop 5 times:
@@ -65,7 +65,7 @@ I have found this [driver][7] that describes what should a JMeter do as in the [
 
 This are described in diver repository as XML configuration of JMeter.
 
-In [study][1] JMeter is set to spawn 64 client threads via a JMeter thread group and targets to issue 2000 transactions per second.
+In study[1] JMeter is set to spawn 64 client threads via a JMeter thread group and targets to issue 2000 transactions per second.
 As hinted in the introduction I do not have access to such hardware setup and thus I've tried to utilize my laptop only.
 
 
@@ -76,8 +76,8 @@ As hinted in the introduction I do not have access to such hardware setup and th
 * 16 GB memory
 * Linux 5.10.61-1-MANJARO
 
-Since hardware is not sufficient to compare to [studies][1,5] I've decided to use Docker with restrained resources to split up the available machines somewhat fairly.
-As per [figure 1][#figure_1]:
+Since hardware is not sufficient to compare to studies[1,5] I've decided to use Docker with restrained resources to split up the available machines somewhat fairly.
+As per Figure 1:
 * DRIVER HOST
     * Natively running process constrained to 2 threads via constraining the thread group size.
 * APPLICATION HOST
@@ -96,8 +96,8 @@ Other than that there is one core left and I tried to calm down the host system 
 
 ## Measurement tools
 
-The [study][1] introduced me to Go language and tooling around it.
-Other than that I also tried to search for some tools to observe performance of the containers in general and that brought me to Brendan Gregg and his [talk at the LISA2017 conference][9].
+The study[1] introduced me to Go language and tooling around it.
+Other than that I also tried to search for some tools to observe performance of the containers in general and that brought me to Brendan Gregg and his talk at the LISA2017 conference[9].
 
 
 ### `pprof`
@@ -122,7 +122,7 @@ My initial idea was to run it from within acmeair container but that has some is
 * It requires to change the SECCOMP policy when executing docker as it blacklists access to perf events because they are a side channel to host. Other option is to allow root capability to a container by changing its CAP-abilities.
 * As I wanted it to be automatic and not manual I could not have used interactive mode. But that is alright, we can just capture the profile right? So I've executed `perf` with the acmeair binary from within `entrypoint.sh` and redirected the output to mounted volume to store the profile data. Unfortunatelly, after test running `docker-compose down` does not properly terminate `perf` and thus the profile data is not readable. This behavior probably can be somehow altered by some teardown procedure but I did not find any such workaround.
 
-Fortunatelly around that time I've found [Brendan Gregg's presentation about container performance analysis][9] where he pointed out that you can limit the scope of what `perf` is measuring by restricting it to single cgroup of a container using `--cgroup` option.
+Fortunatelly around that time I've found Brendan Gregg's presentation about container performance analysis[9] where he pointed out that you can limit the scope of what `perf` is measuring by restricting it to single cgroup of a container using `--cgroup` option.
 Thus I've used `perf` tool from the host as well.
 
 
@@ -137,7 +137,7 @@ This can be used to monitor resource utilization of all currently running contai
 
 **Run AcmeAir Web application and MongoDB**
 
-1. Clone the [https://github.com/yoheiueda/acmeair-go][3] repository and apply `acmeair-go.patch`, from this repo, that just adds working versioning and resource limitations.
+1. Clone the repository[3] and apply `acmeair-go.patch`, from this repo, that just adds working versioning and resource limitations.
 2. Build the `acmeair-go` docker image in the repo:
     ```
     docker build --tag acmeair-go .
@@ -155,13 +155,12 @@ This can be used to monitor resource utilization of all currently running contai
 
 **Install,setup and run JMeter**
 1. Install JMeter, I've just used linux package and I had to use Java8.
-2. Clone [https://github.com/acmeair/acmeair-driver/tree/master/acmeair-jmeter][7] repository.
+2. Clone repository[7].
 3. Follow the steps in the [README](https://github.com/acmeair/acmeair-driver/tree/master/acmeair-jmeter#jmeter-workload-setup-instructions) and pay attention to bottom section that is NodeJS specific but Go implementation is stemmed from NodeJS thus this applies as well. I did not bother with listener specification as I've found out that it can actual produce a full-fledged HTML report with bells and whistles.
 4. Open JMeter GUI to configure the load and explore what the load does.
     ```
     jmeter -t acmeair-jmeter/scripts/AcmeAir.jmx
     ```
-5. ??? Apply patch
 6. Launch the load, along with report generation, from the CLI as it is discouraged actual measurement from GUI.
     ``` bash
     cd acmeair-jmeter/scripts/
@@ -265,7 +264,7 @@ go tool pprof ~/pprof/pprof.acmeair.samples.cpu.001.pb.gz
 
 In order to create interactive flame graphs:
 * use interactive `pprof -http` command shown above, or
-* capture perf profile with stack traces (`-g`) and then use [Brendan Gregg's FlameGraph repository][10]:
+* capture perf profile with stack traces (`-g`) and then use Brendan Gregg's FlameGraph repository[10]:
     ```
     $ perf script --input perf.data | ./stackcollapse-perf.pl | ./flamegraph.pl > flamegraph.svg
 
@@ -279,7 +278,7 @@ It should be possibly with `go tool compile -E file.go file.go` where `-E` adds 
 ## Measurements
 
 With concrete measurements I did not have any particullar goal it was mostly just and exploration of what is available in such environment.
-Still the [study comparing Go, Java and NodeJS][5] did give me something to compare against.
+Still the study comparing Go, Java and NodeJS[5] did give me something to compare against.
 
 
 ### JMeter report
@@ -337,7 +336,7 @@ The resource utilization during the load is measured by custom `docker-resources
 CPU utilization on the app is nearing 100% while database is not really that occupied.
 Memory of 2GiB per container was a bit too overprovisioned even for the mongo.
 Mongo was also the only one using Block output i.e. writing to docker virtual block device.
-The setup from the [study][5] mentiones that they've kept everything in the memory (they had >300GB just on the DB host), the CPU profiling will show whether this impacted us.
+The setup from the study[5] mentiones that they've kept everything in the memory (they had >300GB just on the DB host), the CPU profiling will show whether this impacted us.
 
 Actual numbers from network are not that important but in this kind of setup we can differentiate how much NetI/O was JMeter driving since app was in the middle of JMeter and MongoDB.
 This can be compared to byte throughput from JMeter report.
@@ -350,7 +349,7 @@ I don't really know what drives the "load balancing" of the AcmeAir but I have t
 
 Now that we have showed the results of the measurements I'll try to get insight into what was happening with profiling tools.
 
-[Comparison study][5] has a really nice graph showing how barplot that does compare different parts of individual implementations.
+Comparison study[5] has a really nice graph showing how barplot that does compare different parts of individual implementations.
 I think that parittioning CPU by code sampling is really nicely expressed in form of flame graphs (to be fair to represent what they wanted to they would need some sort of overlaying flamegraphs).
 As mentioned above without debug symbols `perf` doesn't show any symbols in go part of the application but it monitors the kernel.
 Complementary is the `pprof` profile that does not know about the kernel but it does know how to interpret go symbols via its runtime.
@@ -368,8 +367,8 @@ For the http server part it is clearly visible how much CPU time is spent on ind
 Where QueryFlights is the most CPU intensive of these and if we zoom in on it we can see that it spends 25% in parsing JSON alone supposedly because mongo stores and thus returns data in JSON format and query might contain substantialy more data than user profile changes for example.
 
 
-I have tried to match it to the [wakeup profile study][1] that focused on particullar contention on a mutex in mongo access code.
-The [implementation comparing study][5] used different approach by tracking what goroutine is stopped at particullar mutex.
+I have tried to match it to the wakeup profile study[1] that focused on particullar contention on a mutex in mongo access code.
+The implementation comparing study[5] used different approach by tracking what goroutine is stopped at particullar mutex.
 For that purpose I've altered the code of the app to track all the blocked and lock contention events by adding this to main:
 ``` go
 	runtime.SetBlockProfileRate(1)
@@ -391,7 +390,7 @@ This is probably because Gin framework launches multiple acmeair processes that 
 
 ### Cycles per instruction (CPI) and cache misses
 
-Another part of [comparison study][5] was CPI and accompanied explanation of low L1 cache misses.
+Another part of comparison study[5] was CPI and accompanied explanation of low L1 cache misses.
 ```
 $ perf stat -e cpu-cycles,instructions,L1-dcache-load-misses --cgroup ./system.slice/docker-c1688cddc43817f9aa5f7fe2c50f2a6c434b4732d58c322c2de7770a43ee1019.scope -a -- sleep 10
 
@@ -422,22 +421,22 @@ I was quite surprised by the native tooling in the Go language though the docume
 
 ## References
 
-[1]: <https://dl.acm.org/doi/abs/10.1145/3297663.3310296> "profile-based-detection-of-layered-bottlenecks"
+[1 Profile based detection of layered bottlenecks](https://dl.acm.org/doi/abs/10.1145/3297663.3310296)
 
-[2]: <https://github.com/acmeair/acmeair> "acmeair-benchmark"
+[2 Acmeair benchmark](https://github.com/acmeair/acmeair)
 
-[3]: <https://github.com/yoheiueda/acmeair-go> "acmeair-go-benchmark"
+[3 Acmeair-Go benchmark](https://github.com/yoheiueda/acmeair-go)
 
-[4]: <https://github.com/IBM/go-with-wakeup-profile/commits/wakeup-profile.go1.10> "go-with-wakup-profile"
+[4 Go with wakeup profile](https://github.com/IBM/go-with-wakeup-profile/commits/wakeup-profile.go1.10)
 
-[5]: <https://ieeexplore.ieee.org/document/7975266> "performance-competetiveness-of-statically-compiled-web-applications"
+[5 Performance competetiveness of statically compiled web applications](https://ieeexplore.ieee.org/document/7975266)
 
-[6]: <https://pkg.go.dev/net/http/pprof> "pprof-tool"
+[6 `pprof` tool](https://pkg.go.dev/net/http/pprof)
 
-[7]: <https://github.com/acmeair/acmeair-driver/tree/master/acmeair-jmeter> "acmeair-driver"
+[7 Acmeair driver](https://github.com/acmeair/acmeair-driver/tree/master/acmeair-jmeter)
 
-[8]: <https://www.usenix.org/conference/lisa17/conference-program/presentation/gregg> "gregg-linux-containers-performance-analysis"
+[8 Brendan Gregg - Linux containers performance analysis](https://www.usenix.org/conference/lisa17/conference-program/presentation/gregg)
 
-[9]: <https://www.brendangregg.com/perf.html> "gregg-perf-examples"
+[9 Brendan Gregg perf examples"](https://www.brendangregg.com/perf.html)
 
-[10]: <https://github.com/brendangregg/FlameGraph> "gregg-flamegraph"
+[10 Brendan Gregg Flamegraph](https://github.com/brendangregg/FlameGraph)
