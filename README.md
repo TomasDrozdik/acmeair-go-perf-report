@@ -190,14 +190,26 @@ There are also other profile options but the documentation is lacking.
 # Fancy interactive CPU profile
 go tool pprof -http localhost:8888 http://localhost:8080/debug/pprof/profile?seconds=30
 
-# CLI based heap profile
-go tool pprof http://localhost:8080/debug/pprof/heap
+# Heap profile
+go tool pprof -http :8888 http://localhost:8080/debug/pprof/heap
+
+# Add runtime.SetBlockProfileRate(1) to track all block events then run this
+# to see where in terms of stacktrace is your program blocked.
+go tool pprof -http :8888 http://localhost:8080/debug/pprof/block
+
+# Add runtime.SetMutexProfileFraction(1) to track all mutex contention
+# events then run this to see from where are you contending for a mutex lock.
+go tool pprof -http :8888 http://localhost:8080/debug/pprof/mutex
+
 ```
 
 The REST based interface can be used with `-http` command or without it and get then you get CLI alternative.
 Each invocation stores a profile under `~/pprof` and you can view it using:
 ```
+# Web interface view
 go tool pprof -http :8888 ~/pprof/pprof.acmeair.samples.cpu.001.pb.gz
+
+# CLI view
 go tool pprof ~/pprof/pprof.acmeair.samples.cpu.001.pb.gz
 ```
 
@@ -350,13 +362,25 @@ Here we can see that app spent only roughly 60% of its time serving http request
 Syscalls are mostly called from on class `(*mongoSocket) and it makes sense that DB access required write syscalls.
 
 The futex is mostly called from runtime and I did not really understand reason why it is there and why it takes 10% or runtime.
-I have tried to match it to the [wakeup profile study][1] that focused on particullar contention on a mutex in mongo access code but I was not able to find such dependency, supposedly because that is what wakeup-profiles were used for.
-The [implementation comparing study][5] used different approach by tracking what goroutine is stopped at particullar mutex. (???)
-
 Now transition towards a flamegraph via `View -> Flame Graph`.
 This is the same data as in previous graph though it shows proportions of indiviual nodes better.
 For the http server part it is clearly visible how much CPU time is spent on individual REST endpoint: BookFlights, CancelBooking, Login, QueryFlights...
 Where QueryFlights is the most CPU intensive of these and if we zoom in on it we can see that it spends 25% in parsing JSON alone supposedly because mongo stores and thus returns data in JSON format and query might contain substantialy more data than user profile changes for example.
+
+
+I have tried to match it to the [wakeup profile study][1] that focused on particullar contention on a mutex in mongo access code.
+The [implementation comparing study][5] used different approach by tracking what goroutine is stopped at particullar mutex.
+For that purpose I've altered the code of the app to track all the blocked and lock contention events by adding this to main:
+``` go
+	runtime.SetBlockProfileRate(1)
+	runtime.SetMutexProfileFraction(1)
+```
+This profile is also stored in the data folder together and at the top you can switch Samples between Delay - Block profile and Contention - Mutex profile:
+* Delay - How much time was spent in some blocked state and what was the origin (proportionaly)?
+    * In the profile we see that 90% of the time was spent in `runtime - selectgo` which is a language concept similar to `select` call from C. And that "selected" accesses were directed to the MongoDB.
+* Contention - Who and how many times is acquiring a mutex?
+    * Here we see that `main` and `gin (*Context) Next` are waiting for each other 60% of the time, that suggest to me a state of idling or not enough requests to process.
+    * Other thing is that if there is a request to process each has to validate session cookie and that does some wait on the DB request persumably.
 
 **perf profile**
 Since app does not contain debug symbol perf shows a lot of unknown parts in its stack apart from some parts of the kernel stack.
